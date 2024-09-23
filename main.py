@@ -1,0 +1,1 @@
+print('Stocks are kewl')
