@@ -1,7 +1,7 @@
 import pandas as pd
 from openai import OpenAI
 
-STOCK_LIST =  ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST']
+STOCK_LIST = ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST']
 BASE_PATH = '/Users/neo_chara/Desktop/Projects/Stock-Watch'
 
 def get_clean_data():
@@ -23,27 +23,30 @@ def get_description():
     
     return description_dict
 
-def _filter_description(descr_dict):
+def _format_description(descr_dict):
     """Filters description dict to keep indices of interest and Close column"""
     indices_to_keep = ["mean", "min", "max", "std"]
     characteristic_to_keep = "Close"
 
     #restricted_data = {key: df.loc[indices_to_keep] for key, df in descr_dict.items()}
-    restricted_dict = {}
+    all_info_dictionaries = {}
     for key, df in descr_dict.items():
-        restricted_dict[key] = df[characteristic_to_keep].loc[indices_to_keep]
+        info_df = df[characteristic_to_keep].loc[indices_to_keep]#.to_csv(index=True)
+        info_dict = info_df.to_dict()
+        info_dict['stock_index'] = key
+        all_info_dictionaries[key] = info_dict
     
-    return restricted_dict
+    return all_info_dictionaries
 
 
-def _get_llm_response(idx_queried, idx_descr_df):
+def _get_llm_response(info_dict):
     client = OpenAI()
-    df_str = idx_descr_df.to_csv(index=True)
+    idx_name = info_dict['stock_index'].upper()
 
     query_str = f"""
-    I am providing you with the following summary statistics \n{df_str}\n of the {idx_queried.upper()} stock index. 
+    I am providing you with the following summary statistics \n{info_dict}\n of the {idx_name} stock index. 
     Can you give me a description, just like the following:
-    Here are the statistics for the {idx_queried.upper()} index. The average stock value was $XXX. The min and max were respectively
+    Here are the statistics for the {idx_name} index. The average stock value was $XXX. The min and max were respectively
     $XX and $XX, and we observed a standard deviation of $XXX.
     """
 
@@ -63,11 +66,11 @@ def _get_llm_response(idx_queried, idx_descr_df):
 def get_nl_summary():
     """"Gets a summary of the filtered descriptions, for each stock index"""
     descr_dict = get_description()
-    filtered_descr_dict = _filter_description(descr_dict)
+    all_info_dictionaries = _format_description(descr_dict)
 
     response_dict = {}
-    for stock_idx, stock_description in filtered_descr_dict.items():
-        response_dict[stock_idx] = _get_llm_response(stock_idx,stock_description)
+    for stock_idx, info_dict in all_info_dictionaries.items():
+        response_dict[stock_idx] = _get_llm_response(info_dict)
     
     return response_dict
 
