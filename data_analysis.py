@@ -1,12 +1,13 @@
 import pandas as pd
 
 STOCK_LIST =  ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST']
+BASE_PATH = '/Users/neo_chara/Desktop/Projects/Stock-Watch'
 
 def get_clean_data():
     stocks_dfs_dict = {}
     for symbol in STOCK_LIST:
         file_name = f"{symbol.lower()}_stock.csv"
-        path_csv = f"data/{file_name}"
+        path_csv = f"{BASE_PATH}/data/{file_name}"
         stocks_dfs_dict[f"{symbol.lower()}"] = pd.read_csv(path_csv,index_col='Date')
 
     return stocks_dfs_dict
