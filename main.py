@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 # Set the title for the Streamlit app
-st.title(' Trend for This Month')
+st.title('Trend for This Month')
 
 # Define the stock symbol
 stock_symbol = 'NVDA'
