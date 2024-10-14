@@ -1,8 +1,9 @@
+import os
 import pandas as pd
 from openai import OpenAI
 
 STOCK_LIST = ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST']
-BASE_PATH = '/Users/neo_chara/Desktop/Projects/Stock-Watch'
+BASE_PATH = os.getcwd() #'/Users/neo_chara/Desktop/Projects/Stock-Watch'
 
 def get_clean_data():
     stocks_dfs_dict = {}
