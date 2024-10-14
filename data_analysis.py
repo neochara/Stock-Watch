@@ -9,7 +9,7 @@ def get_clean_data():
     for symbol in STOCK_LIST:
         file_name = f"{symbol.lower()}_stock.csv"
         path_csv = f"{BASE_PATH}/data/{file_name}"
-        stocks_dfs_dict[f"{symbol.lower()}"] = pd.read_csv(path_csv,index_col='Date')
+        stocks_dfs_dict[f"{symbol.lower()}"] = pd.read_csv(path_csv,index_col='Date', parse_dates=True)
 
     return stocks_dfs_dict
 
