@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 
 START_DATE = "2018-01-01"
-STOCK_LIST =  ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST']
+STOCK_LIST =  ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST', 'GME', 'PFE', 'LLY']
 
 def fetch_data():
     today = datetime.today()

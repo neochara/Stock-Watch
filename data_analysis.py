@@ -2,24 +2,40 @@ import os
 import pandas as pd
 from openai import OpenAI
 
-STOCK_LIST = ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST']
-BASE_PATH = os.getcwd() #'/Users/neo_chara/Desktop/Projects/Stock-Watch'
+STOCK_LIST = ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST', 'GME', 'PFE', 'LLY']
+stock_name_data_dict = {'NVDA':'Nvidia', 'TSLA':'Tesla', 'AMZN':'Amazon', 'MSFT':'Microsoft', 'COST':'Costco', 'GME':'GameStop', 'PFE':'Pfizer Inc', 'LLY':'Eli Lilly And Co'}
+
+#BASE_PATH = os.getcwd() #'/Users/neo_chara/Desktop/Projects/Stock-Watch'
+BASE_PATH = '/Users/neo_chara/Desktop/Projects/Stock-Watch'
 
 def get_clean_data():
+    """Retrieves a dictionary of dataframes, of the data we are interested in"""
     stocks_dfs_dict = {}
-    for symbol in STOCK_LIST:
+    #for symbol in STOCK_LIST:
+    '''
+    for symbol in stock_name_data_dict:
         file_name = f"{symbol.lower()}_stock.csv"
         path_csv = f"{BASE_PATH}/data/{file_name}"
         stocks_dfs_dict[f"{symbol.lower()}"] = pd.read_csv(path_csv,index_col='Date', parse_dates=True)
+        stocks_dfs_dict[symbol.lower()]['company_name'] = stock_name_data_dict[symbol]
+    '''
+    for symbol in stock_name_data_dict:
+        file_name = f"{symbol.lower()}_stock.csv"
+        path_csv = os.path.join(BASE_PATH, 'data', file_name)  # Use os.path.join for better path handling
+        df_tmp = pd.read_csv(path_csv, index_col='Date', parse_dates=True)
+        df_tmp['company_name'] = stock_name_data_dict[symbol]
+        stocks_dfs_dict[symbol.lower()] = df_tmp
 
     return stocks_dfs_dict
 
 
 def get_description():
-    stocks_dict = get_clean_data()
+    """Returns a dictionary containing the statistical summaries of each stock's dataframe"""
+    stocks_dfs_dict = get_clean_data()
 
     description_dict = {}
-    for stock_idx, stock_data in stocks_dict.items():
+    for stock_idx, stock_data in stocks_dfs_dict.items():
+        # stock_idx --> key, stock_data --> dataframe
         description_dict[stock_idx] = stock_data.describe()
     
     return description_dict
@@ -43,11 +59,12 @@ def _format_description(descr_dict):
 def _get_llm_response(info_dict):
     client = OpenAI()
     idx_name = info_dict['stock_index'].upper()
+    #idx_company = info_dict['company_name']
 
     query_str = f"""
-    I am providing you with the following summary statistics \n{info_dict}\n of the {idx_name} stock index. 
+    I am providing you with the following summary statistics \n{info_dict}\n of {idx_name} stock. 
     Can you give me a description, just like the following:
-    Here are the statistics for the {idx_name} index. The average stock value was $XXX. The min and max were respectively
+    Here are the statistics for the {idx_name} stock index. The average stock value was $XXX. The min and max were respectively
     $XX and $XX, and we observed a standard deviation of $XXX.
     """
 
