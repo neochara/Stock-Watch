@@ -1,30 +1,18 @@
 import os
 import pandas as pd
 from openai import OpenAI
-
-STOCK_LIST = ['NVDA', 'TSLA', 'AMZN', 'MSFT', 'COST', 'GME', 'PFE', 'LLY']
-stock_name_data_dict = {'NVDA':'Nvidia', 'TSLA':'Tesla', 'AMZN':'Amazon', 'MSFT':'Microsoft', 'COST':'Costco', 'GME':'GameStop', 'PFE':'Pfizer Inc', 'LLY':'Eli Lilly And Co'}
-
-#BASE_PATH = os.getcwd() #'/Users/neo_chara/Desktop/Projects/Stock-Watch'
-BASE_PATH = '/Users/neo_chara/Desktop/Projects/Stock-Watch'
+from constants import BASE_PATH, STOCK_DATA_DICT
 
 def get_clean_data():
     """Retrieves a dictionary of dataframes, of the data we are interested in"""
     stocks_dfs_dict = {}
-    #for symbol in STOCK_LIST:
-    '''
-    for symbol in stock_name_data_dict:
-        file_name = f"{symbol.lower()}_stock.csv"
-        path_csv = f"{BASE_PATH}/data/{file_name}"
-        stocks_dfs_dict[f"{symbol.lower()}"] = pd.read_csv(path_csv,index_col='Date', parse_dates=True)
-        stocks_dfs_dict[symbol.lower()]['company_name'] = stock_name_data_dict[symbol]
-    '''
-    for symbol in stock_name_data_dict:
+
+    for company, symbol in STOCK_DATA_DICT.items():  # Use .items() to get both company name and symbol
         file_name = f"{symbol.lower()}_stock.csv"
         path_csv = os.path.join(BASE_PATH, 'data', file_name)  # Use os.path.join for better path handling
-        df_tmp = pd.read_csv(path_csv, index_col='Date', parse_dates=True)
-        df_tmp['company_name'] = stock_name_data_dict[symbol]
-        stocks_dfs_dict[symbol.lower()] = df_tmp
+        df = pd.read_csv(path_csv, index_col='Date', parse_dates=True)
+        df['company_name'] = company  # Use the company name from STOCK_DATA_DICT
+        stocks_dfs_dict[symbol.lower()] = df
 
     return stocks_dfs_dict
 

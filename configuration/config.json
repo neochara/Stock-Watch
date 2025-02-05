@@ -1,0 +1,35 @@
+{
+    "base_path": "/Users/neo_chara/Desktop/Projects/Stock-Watch",
+    "stock_list": ["NVDA", "TSLA", "AMZN", "MSFT", "COST"],
+    "stock_name_data_dict": {
+        "NVDA": "Nvidia",
+        "TSLA": "Tesla",
+        "AMZN": "Amazon",
+        "MSFT": "Microsoft",
+        "COST": "Costco"
+    },
+    "data_parameters": {
+        "date_column": "Date",
+        "index_column": "Date",
+        "parse_dates": true
+    },
+    "plot_settings": {
+        "figure_size": [10, 6],
+        "grid": true,
+        "line_styles": {
+            "open": {
+                "color": "blue",
+                "marker": "x",
+                "linestyle": "-"
+            },
+            "close": {
+                "color": "red",
+                "marker": "o",
+                "linestyle": "-"
+            }
+        }
+    },
+    "api_keys": {
+        "openai": "your_openai_api_key_here"
+    }
+}
