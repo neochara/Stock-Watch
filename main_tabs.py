@@ -6,13 +6,17 @@ import numpy as np
 import mplfinance as mpf
 from datetime import datetime
 from utils import plot_streamlit
-from constants import STOCK_DATA_DICT, START_DATE, END_DATE
+from constants import STOCK_DATA_DICT, STOCK_IND_LIST, START_DATE, END_DATE
 import random
+import yfinance as yf
+import datetime as dt
+import seaborn as sns
+sns.set_style('whitegrid')
 
 st.title('Stock Watch :sunglasses:')
 
 idx_of_interest = st.selectbox("Select a stock index:",
-                                list(STOCK_DATA_DICT.values()))
+                                STOCK_IND_LIST)
                                 # random.choice(list(STOCK_DATA_DICT.values()))
 
 st.write(f"Let us summarize the {idx_of_interest} stock")
@@ -25,7 +29,7 @@ stocks_dfs_dict = get_clean_data()
 idx_df = stocks_dfs_dict[idx_of_interest]
 #company_of_interest = idx_df['copmany_name']
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Data and Timeseries", "Statistics", "EWMA", "Candlesticks", "Volatility"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Data and Timeseries", "Statistics", "EWMA", "Candlesticks", "Stock Comparisons"])
 
 # - - - Display data to streamlit - - -
 with tab1: 
@@ -170,6 +174,41 @@ with tab4:
 
     st.write("**Naked Price Action** -- green candlesticks are **bullish** (increase in price), red candlesticks are **bearish** (increase in price).")
 
-# - - - Volatility - - -
+# - - - Comparisons - - -
 with tab5:
-    st.header(f"Volatility of {idx_of_interest.upper()}")
+    st.header(f"Indices Comparisons, over the past years")
+    number_of_years = st.selectbox("Select the past how many years you want to compare",
+                                list(range(1, 6)))
+
+    start_date_comparison = END_DATE - dt.timedelta(365*number_of_years) 
+
+    # Download stock data for each symbol
+    stock_data = yf.download(STOCK_IND_LIST, start=start_date_comparison, end=END_DATE)
+
+    # Calculate log returns for each stock symbol and add them to the DataFrame
+    log_returns = pd.DataFrame()
+    for symbol in STOCK_IND_LIST:
+        log_returns[symbol] = np.log(stock_data['Close'][symbol]/stock_data['Close'][symbol].shift(1))
+
+    log_returns = log_returns.dropna()
+
+    returns = (np.exp(log_returns)-1)
+
+    plt.figure(figsize=(12, 6))
+
+    for symbol in STOCK_IND_LIST:
+        plt.plot(stock_data.index, ((stock_data['Close'][symbol]/stock_data['Close'][symbol].iloc[0])-1)*100, label=symbol)
+    plt.legend()
+    plt.title('Stock Growth', fontsize = 20)
+    plt.ylabel('Cumulative Returns in %', fontsize = 15)
+    st.pyplot(plt)
+
+    # Calculate the covariance matrix
+    covariance_matrix = ((log_returns).cov())
+
+    # Create a heatmap to visualize the covariance matrix
+    plt.figure(figsize=(15, 15))
+    sns.heatmap(1000*covariance_matrix, annot=True, cmap='cividis', fmt='.4f', linewidths=.5)  # multiply by 1000, to reove decimals
+    plt.title('Covariance Matrix of Log Returns (scaled by 10^3)', fontsize=20)
+    plt.show()
+    st.pyplot(plt)

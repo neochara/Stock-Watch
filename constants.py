@@ -30,6 +30,8 @@ STOCK_DATA_DICT = {
     'Volcon Inc': 'VLCN'
 }
 
+STOCK_IND_LIST = list(STOCK_DATA_DICT.values())
+
 START_DATE = "2018-01-01"
 TODAY = datetime.today()
 END_DATE = datetime.today().date()

@@ -6,13 +6,13 @@ import numpy as np
 import mplfinance as mpf
 from datetime import datetime
 from utils import plot_streamlit, bollinger_bands
-from constants import STOCK_DATA_DICT, START_DATE, END_DATE
+from constants import STOCK_DATA_DICT, STOCK_IND_LIST, START_DATE, END_DATE
 import random
 
 st.title('Stock Watch :sunglasses:')
 
 idx_of_interest = st.selectbox("Select a stock index:",
-                                list(STOCK_DATA_DICT.values()))
+                                STOCK_IND_LIST)
                                 # random.choice(list(STOCK_DATA_DICT.values()))
 
 st.write(f"Let us summarize the {idx_of_interest} stock")

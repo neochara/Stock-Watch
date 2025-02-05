@@ -11,7 +11,7 @@ def fetch_data():
     
     for company, stock_symbol in STOCK_DATA_DICT.items():
         stock_data = yf.download(stock_symbol, start=START_DATE, end=TODAY)
-        stock_data.to_csv(f"data/{stock_symbol}.csv")
+        #stock_data.to_csv(f"data/{stock_symbol}.csv")
         stock_data.to_csv(f"data/{stock_symbol.lower()}_stock.csv")
 
 def _count_null(df):
