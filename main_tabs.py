@@ -13,6 +13,7 @@ import datetime as dt
 import seaborn as sns
 sns.set_style('whitegrid')
 
+
 st.title('Stock Watch :sunglasses:')
 
 idx_of_interest = st.selectbox("Select a stock index:",
