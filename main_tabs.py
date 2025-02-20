@@ -1,18 +1,21 @@
-import streamlit as st
-from data_analysis import get_clean_data, get_description, get_nl_summary
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-import mplfinance as mpf
-from datetime import datetime
-from utils import plot_streamlit
-from constants import STOCK_DATA_DICT, STOCK_IND_LIST, START_DATE, END_DATE
-import random
-import yfinance as yf
 import datetime as dt
-import seaborn as sns
-sns.set_style('whitegrid')
+import random
+from datetime import datetime
 
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import streamlit as st
+import yfinance as yf
+import plotly.express as px
+
+from constants import END_DATE, START_DATE, STOCK_DATA_DICT, STOCK_IND_LIST
+from data_analysis import get_clean_data, get_description, get_nl_summary
+from utils import plot_streamlit
+
+sns.set_style('whitegrid')
 
 st.title('Stock Watch :sunglasses:')
 
@@ -30,10 +33,10 @@ stocks_dfs_dict = get_clean_data()
 idx_df = stocks_dfs_dict[idx_of_interest]
 #company_of_interest = idx_df['copmany_name']
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Data and Timeseries", "Statistics", "EWMA", "Candlesticks", "Stock Comparisons"])
+Data_TS_tab, Stats_tab, EWMA_tab, Candlesticks_tab, Stocks_comp_tab = st.tabs(["Data and Timeseries", "Statistics", "EWMA", "Candlesticks", "Stock Comparisons"])
 
 # - - - Display data to streamlit - - -
-with tab1: 
+with Data_TS_tab: 
     st.header(f"{idx_of_interest.upper()} Data and Timeseries")
     st.dataframe(idx_df)
 
@@ -63,6 +66,26 @@ with tab1:
                 dataframe2 = idx_df.index, data_plot2 = idx_df['Close'],
                 plot_marker2 = None, plot_linestyle2 = '-', plot_color2='r', label1=None, label2=None)
 
+    '''
+    # Create the plot
+    fig = px.line(
+        idx_df, 
+        x=idx_df.index, 
+        y=['Open', 'Close'], 
+        title=f"Opening and Closing Price Time Series of {idx_of_interest.upper()}",
+        labels={'value': 'Price (USD)', 'variable': 'Price Type'},
+        markers=True)
+    # Customize layout for the plot
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis_title="Price (USD)",
+        legend_title="Price Type",
+        title=f"{idx_of_interest.upper()} Stock Prices",
+        template="plotly_white")
+    # Display the plot in Streamlit
+    st.plotly_chart(fig)
+    '''
+
     # Plot difference between opening and closing price
     plot_streamlit(header = f"Difference between Closing and Opening Price Time Series of {idx_of_interest.upper()}",
                 plot_title = f"{idx_of_interest.upper()} Stock Closing Prices",
@@ -72,7 +95,7 @@ with tab1:
                 dataframe2=None, data_plot2=None, plot_marker2=None, plot_linestyle2=None, plot_color2=None, label1=None, label2=None)
 
 # - - - Plot timeseries description table - - -
-with tab2:
+with Stats_tab:
     description_dict = get_description()
     description_idx_df = description_dict[idx_of_interest]
 
@@ -87,7 +110,7 @@ with tab2:
 # st.text(response_idx)
 
 # - - - Plot EWMA on Closing Prices with varying half-life - - -
-with tab3:
+with EWMA_tab:
     half_life_short = st.number_input("Enter a half-life of your EWMA in days, up to 3 years",
                             min_value=1, max_value=1095, value=30, step=1)
     alpha_hl_short = 1 - np.exp(-np.log(2)/half_life_short)
@@ -166,7 +189,7 @@ with tab3:
     # - - - - - - - - - - - - - - - - - -
 
 # - - - Plot Candlestick Chart on Closing Prices - - -
-with tab4:
+with Candlesticks_tab:
     st.header(f"Candlestick Chart Analysis on Closing Prices of {idx_of_interest.upper()}")
     fig, ax = mpf.plot(idx_df, type='candle', style='charles', 
                         title=f"Candlestick Chart for {idx_of_interest.upper()}",
@@ -176,8 +199,8 @@ with tab4:
     st.write("**Naked Price Action** -- green candlesticks are **bullish** (increase in price), red candlesticks are **bearish** (increase in price).")
 
 # - - - Comparisons - - -
-with tab5:
-    st.header(f"Indices Comparisons, over the past years")
+with Stocks_comp_tab:
+    st.header("Indices Comparisons, over the past years")
     number_of_years = st.selectbox("Select the past how many years you want to compare",
                                 list(range(1, 6)))
 
