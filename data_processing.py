@@ -1,7 +1,7 @@
 import yfinance as yf
 from datetime import datetime
 import pandas as pd
-from constants import STOCK_DATA_DICT, START_DATE, TODAY
+from constants import STOCK_DATA_DICT, START_DATE, TODAY, END_DATE
 import os
 
 def fetch_data():
@@ -10,6 +10,7 @@ def fetch_data():
         raise FileNotFoundError("The 'data' directory does not exist. Please create it before running the script.")
     
     for company, stock_symbol in STOCK_DATA_DICT.items():
+        #stock_data = yf.download(stock_symbol, start=START_DATE, end=END_DATE)
         stock_data = yf.download(stock_symbol, start=START_DATE, end=TODAY)
         #stock_data.to_csv(f"data/{stock_symbol}.csv")
         stock_data.to_csv(f"data/{stock_symbol.lower()}_stock.csv")
