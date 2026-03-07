@@ -24,6 +24,16 @@ st.write(f"The time period we are looking at is {START_DATE} to {END_DATE}")
 stocks_dfs_dict = get_clean_data()
 
 idx_df = stocks_dfs_dict[idx_of_interest]
+
+# --- minimal cleanup for plotting/rolling calculations ---
+idx_df = idx_df.copy()
+idx_df.index = pd.to_datetime(idx_df.index, errors='coerce')
+idx_df = idx_df[~idx_df.index.isna()]
+idx_df = idx_df.sort_index()
+for col in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
+    if col in idx_df.columns:
+        idx_df[col] = pd.to_numeric(idx_df[col].astype(str).str.replace(',', '', regex=False).str.replace('$', '', regex=False), errors='coerce')
+
 #company_of_interest = idx_df['copmany_name']
 
 # Display data to streamlit
@@ -103,8 +113,9 @@ plt.xlabel('Time', fontsize=12)
 plt.ylabel('Value', fontsize=12)
 plt.legend()
 plt.grid()
-plt.show()
-st.pyplot(plt)
+fig = plt.gcf()
+st.pyplot(fig)
+plt.close(fig)
 
 # - - - Plot EWMA on Closing Prices - - -
 alpha = st.number_input("Enter a smoothing parameter $\\alpha$ between 0 and 1:",
@@ -153,8 +164,9 @@ plt.xlabel('Time', fontsize=12)
 plt.ylabel('Value', fontsize=12)
 plt.legend()
 plt.grid()
-plt.show()
-st.pyplot(plt)
+fig = plt.gcf()
+st.pyplot(fig)
+plt.close(fig)
 # - - - - - - - - - - - - - - - - - -
 
 # - - - Plot Candlestick Chart on Closing Prices - - -
@@ -168,27 +180,54 @@ st.pyplot(fig)
 st.write("**Naked Price Action** -- green candlesticks are **bullish** (increase in price), red candlesticks are **bearish** (increase in price).")
 
 # - - - Plot Bollinger Bands - - -
-st.title('Bollinger Bands Visualization')
+# Choose k (number of standard deviations)
+k_options = [1, 1.5, 2, 2.5, 3, 4]
+k = st.selectbox("Bollinger band k (std deviations):", k_options, index=k_options.index(2))
+df_Boll_band = bollinger_bands(idx_df["Close"].dropna(), num_std=float(k))
 
-# Calculate Bollinger Bands
-df_Boll_band = bollinger_bands(idx_df['Open'])
-
-# Plot the stock data and Bollinger Bands
 fig, ax = plt.subplots(figsize=(10, 6))
 
-# Plot Close price
-ax.plot(df_Boll_band.index, df_Boll_band, label='Close Price', color='blue')
+# Close price (keep as-is)
+ax.plot(df_Boll_band.index, df_Boll_band["Price"], label="Close Price", color="blue", linewidth=1.5)
 
-# Plot Bollinger Bands
-ax.plot(df_Boll_band.index, df_Boll_band['Upper Band'], label='Upper Band', color='red', linestyle='--')
-ax.plot(df_Boll_band.index, df_Boll_band['Lower Band'], label='Lower Band', color='green', linestyle='--')
-ax.plot(df_Boll_band.index, df_Boll_band['Rolling Mean'], label='Rolling Mean', color='orange', linestyle='--')
+# Shade between bands (light blue)
+ax.fill_between(
+    df_Boll_band.index,
+    df_Boll_band["Lower Band"],
+    df_Boll_band["Upper Band"],
+    color="lightblue",
+    alpha=0.25,
+)
 
-# Add title and labels
-ax.set_title(f'{idx_of_interest} Bollinger Bands', fontsize=16)
-ax.set_xlabel('Date')
-ax.set_ylabel('Price (USD)')
-ax.legend(loc='best')
+ax.plot(
+    df_Boll_band.index,
+    df_Boll_band["Upper Band"],
+    color="red",
+    linewidth=1.0,
+    label="_nolegend_",
+)
+ax.plot(
+    df_Boll_band.index,
+    df_Boll_band["Lower Band"],
+    color="green",
+    linewidth=1.0,
+    label="_nolegend_",
+)
 
-# Display plot in Streamlit
+# Rolling mean: thin dashed line, keep it in legend
+ax.plot(
+    df_Boll_band.index,
+    df_Boll_band["Rolling Mean"],
+    color="orange",
+    linestyle="--",
+    linewidth=1.0,
+    label="Rolling Mean",
+)
+
+ax.set_title(f"{idx_of_interest.upper()} Bollinger Bands", fontsize=16)
+ax.set_xlabel("Date")
+ax.set_ylabel("Price (USD)")
+ax.legend(loc="best")
+
 st.pyplot(fig)
+plt.close(fig)
