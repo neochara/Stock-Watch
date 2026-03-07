@@ -1,233 +1,102 @@
-import streamlit as st
-from data_analysis import get_clean_data, get_description, get_nl_summary
-import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-import mplfinance as mpf
-from datetime import datetime
-from utils import plot_streamlit, bollinger_bands
-from constants import STOCK_DATA_DICT, STOCK_IND_LIST, START_DATE, END_DATE
-import random
+import seaborn as sns
+import streamlit as st
 
-st.title('Stock Watch :sunglasses:')
+from constants import END_DATE, START_DATE, STOCK_IND_LIST
+from data_analysis import get_clean_data
+from tabs.portfolio_management.portfolio_main import render_portfolio_tab
+from tabs.quant_basics.quant_main import render_quant_basics_tab
+from tabs.stock_data.bollinger import render_bollinger_tab
+from tabs.stock_data.candlesticks import render_candlesticks_tab
+from tabs.stock_data.comparison import render_comparison_tab
+from tabs.stock_data.data_ts import render_data_ts_tab
+from tabs.stock_data.ewma import render_ewma_tab
+from tabs.stock_data.overview import render_overview_tab
+from tabs.stock_data.stats import render_stats_tab
+from tabs.stock_data.terminology import render_terminology_tab
 
-idx_of_interest = st.selectbox("Select a stock index:",
-                                STOCK_IND_LIST)
-                                # random.choice(list(STOCK_DATA_DICT.values()))
 
-st.write(f"Let us summarize the {idx_of_interest} stock")
-idx_of_interest = idx_of_interest.lower()
+def main(stocks_dfs_dict: dict[str, pd.DataFrame]):
+    sns.set_style("whitegrid")
 
-st.write(f"The time period we are looking at is {START_DATE} to {END_DATE}")
+    st.title("Stock Watch :sunglasses:")
+    st.write(f"The time period we are looking at is {START_DATE} to {END_DATE}")
 
-# - - - Plot timeseries - - -
-stocks_dfs_dict = get_clean_data()
+    # Top-level Tabs
+    top_stockdata_tab, Top_QuantBasics_Tab, Top_Portfolio_Tab = st.tabs(
+        ["Stock Data", "Quant Finance 'Basics'", "Portfolio Management"]
+    )
+    with top_stockdata_tab:
+        idx_of_interest = st.selectbox("Select a stock index:", STOCK_IND_LIST)
+        st.write(f"Let us summarize the {idx_of_interest} stock")
+        idx_of_interest = idx_of_interest.lower()
 
-idx_df = stocks_dfs_dict[idx_of_interest]
+        idx_df = stocks_dfs_dict.get(idx_of_interest, None)
+        if idx_df is None:
+            st.error(f"Data for {idx_of_interest} not found.")
 
-# --- minimal cleanup for plotting/rolling calculations ---
-idx_df = idx_df.copy()
-idx_df.index = pd.to_datetime(idx_df.index, errors='coerce')
-idx_df = idx_df[~idx_df.index.isna()]
-idx_df = idx_df.sort_index()
-for col in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
-    if col in idx_df.columns:
-        idx_df[col] = pd.to_numeric(idx_df[col].astype(str).str.replace(',', '', regex=False).str.replace('$', '', regex=False), errors='coerce')
+        # Subtabs for Stock Data
+        (
+            Overview_tab,
+            Terminology_tab,
+            Data_TS_tab,
+            Stats_tab,
+            EWMA_tab,
+            Candlesticks_tab,
+            Bollinger_tab,
+            Stocks_comp_tab,
+        ) = st.tabs(
+            [
+                "Overview",
+                "Terminology",
+                "Data and Timeseries",
+                "Statistics",
+                "EWMA",
+                "Candlesticks",
+                "Bollinger Bands",
+                "Stock Comparisons",
+            ]
+        )
 
-#company_of_interest = idx_df['copmany_name']
+        with Overview_tab:
+            render_overview_tab()
 
-# Display data to streamlit
-st.header(f"{idx_of_interest.upper()} Stock Data")
-st.dataframe(idx_df)
+        with Terminology_tab:
+            render_terminology_tab()
 
-# - - - Plots of opening and closing price - - -
-# Plot of opening price
-plot_streamlit(header = f"Opening Price Time Series of {idx_of_interest.upper()}",
-               plot_title = f"{idx_of_interest.upper()} Stock Opening Prices",
-               x_label = 'Date', y_label = 'Opening Price (USD)', grid='YES', legend = 'NO',
-               dataframe = idx_df.index, data_plot = idx_df['Open'],
-               plot_marker='x', plot_linestyle='-', plot_color='b',
-               dataframe2=None, data_plot2=None, plot_marker2=None, plot_linestyle2=None, plot_color2=None, label1=None, label2=None)
+        if idx_df is not None:
+            with Data_TS_tab:
+                render_data_ts_tab(idx_df, idx_of_interest)
 
-# Plot of closing price
-plot_streamlit(header = f"Closing Price Time Series of {idx_of_interest.upper()}",
-               plot_title = f"{idx_of_interest.upper()} Stock Closing Prices",
-               x_label = 'Date', y_label = 'Closing Price (USD)', grid='YES', legend = 'NO',
-               dataframe = idx_df.index, data_plot = idx_df['Close'],
-               plot_marker='o', plot_linestyle='-', plot_color='r',
-               dataframe2=None, data_plot2=None, plot_marker2=None, plot_linestyle2=None, plot_color2=None, label1=None, label2=None)
+            with Stats_tab:
+                render_stats_tab(idx_of_interest)
 
-# Plot both opening and closing price
-plot_streamlit(f"Opening and Closing Price Time Series of {idx_of_interest.upper()}",
-               plot_title = f'{idx_of_interest.upper()} Stock Prices',
-               x_label = 'Date', y_label = 'Closing Price (USD)', grid='YES', legend = 'NO',
-               dataframe = idx_df.index, data_plot = idx_df['Open'],
-               plot_marker = None, plot_linestyle='-', plot_color='b',
-               dataframe2 = idx_df.index, data_plot2 = idx_df['Close'],
-               plot_marker2 = None, plot_linestyle2 = '-', plot_color2='r', label1=None, label2=None)
+            with EWMA_tab:
+                render_ewma_tab(idx_df, idx_of_interest)
 
-# Plot difference between opening and closing price
-plot_streamlit(header = f"Difference between Closing and Opening Price Time Series of {idx_of_interest.upper()}",
-               plot_title = f"{idx_of_interest.upper()} Stock Closing Prices",
-               x_label = 'Date', y_label = 'Closing Price (USD)', grid='YES', legend = 'NO',
-               dataframe = idx_df.index, data_plot = idx_df['Close']-idx_df['Open'],
-               plot_marker = None, plot_linestyle='-', plot_color='m',
-               dataframe2=None, data_plot2=None, plot_marker2=None, plot_linestyle2=None, plot_color2=None, label1=None, label2=None)
+            with Candlesticks_tab:
+                render_candlesticks_tab(idx_df, idx_of_interest)
 
-# - - - Plot timeseries description table - - -
-description_dict = get_description()
-description_idx_df = description_dict[idx_of_interest]
+            with Bollinger_tab:
+                render_bollinger_tab(idx_df, idx_of_interest)
 
-st.header(f"{idx_of_interest.upper()} Stock Data Statistics")
-st.dataframe(description_idx_df)
+    # Comparison tab generally loads all data, so we pass the dict
+    with Stocks_comp_tab:
+        render_comparison_tab(stocks_dfs_dict)
 
-# - - - Display Text Summary - - -
-# response_dict = get_nl_summary()
-# response_idx = response_dict[idx_of_interest]
+    with Top_QuantBasics_Tab:
+        render_quant_basics_tab()
 
-# st.header(f"{idx_of_interest.upper()} Stock Summary")
-# st.text(response_idx)
+    with Top_Portfolio_Tab:
+        # Ensure data is loaded if user goes straight to Portfolio Tab (though usually Stock Data loads first)
+        if "stocks_dfs_dict" not in locals():
+            stocks_dfs_dict = get_clean_data()
 
-# - - - Plot EWMA on Closing Prices with varying half-life - - -
+        render_portfolio_tab(stocks_dfs_dict)
 
-half_life_short = st.number_input("Enter a half-life of your EWMA in days, up to 3 years",
-                        min_value=1, max_value=1095, value=30, step=1)
-alpha_hl_short = 1 - np.exp(-np.log(2)/half_life_short)
-st.write(f"For half-life = {half_life_short}, we get $\\alpha$ = {alpha_hl_short}")
 
-half_life_long = st.number_input("Enter a longer half-life of your EWMA in days, up to 3 years",
-                        min_value=half_life_short, max_value=1095, value=100, step=1)
-alpha_hl_long = 1 - np.exp(-np.log(2)/half_life_long)
-st.write(f"For the longer half-life = {half_life_long}, we get $\\alpha$ = {alpha_hl_long}")
+if __name__ == "__main__":
+    # Get data
+    stocks_dfs_dict = get_clean_data()
 
-ewma_closing_hl_short = idx_df['Close'].ewm(halflife=half_life_short, adjust=False).mean()
-ewma_closing_hl_long = idx_df['Close'].ewm(halflife=half_life_long, adjust=False).mean()
-
-st.header(f"EWMA of Closing Price Time Series of {idx_of_interest.upper()} -- varying half-life")
-plt.figure(figsize=(12, 6))
-plt.plot(idx_df['Close'], label='Original Data', color='skyblue')
-plt.plot(ewma_closing_hl_short, label=f'short half-life={half_life_short}', color='orange')
-plt.plot(ewma_closing_hl_long, label=f'long half-life={half_life_long}', color='green')
-plt.title('Exponentially Weighted Moving Average (EWMA) -- varying half-life', fontsize=16)
-plt.xlabel('Time', fontsize=12)
-plt.ylabel('Value', fontsize=12)
-plt.legend()
-plt.grid()
-fig = plt.gcf()
-st.pyplot(fig)
-plt.close(fig)
-
-# - - - Plot EWMA on Closing Prices - - -
-alpha = st.number_input("Enter a smoothing parameter $\\alpha$ between 0 and 1:",
-                        min_value=0.01, max_value=1.0, value=0.05, step=0.01)
-
-ewma_instrument_closing = pd.Series(idx_df['Close']).ewm(alpha=alpha, adjust=False).mean()
-
-plot_streamlit(header = f"EWMA of Closing Price Time Series of {idx_of_interest.upper()}",
-               plot_title = 'Exponentially Weighted Moving Average (EWMA), w/ choice of $\\alpha$',
-               x_label = 'Time', y_label = 'Value', grid='NO', legend = 'YES',
-               dataframe = idx_df.index, data_plot = idx_df['Close'], plot_color='skyblue',
-               label1='Original Data', plot_marker = None, plot_linestyle='-',
-               dataframe2 = idx_df.index, data_plot2=ewma_instrument_closing,
-               label2=f'EWMA (alpha={alpha})', plot_marker2=None, plot_linestyle2=None, plot_color2='orange')
-
-# st.header(f"EWMA of Closing Price Time Series of {idx_of_interest.upper()}")
-# plt.figure(figsize=(12, 6))
-# plt.plot(idx_df['Close'], label='Original Data', color='skyblue')
-# plt.plot(ewma_instrument_closing, label=f'EWMA (alpha={alpha})', color='orange')
-# plt.title('Exponentially Weighted Moving Average (EWMA)', fontsize=16)
-# plt.xlabel('Time', fontsize=12)
-# plt.ylabel('Value', fontsize=12)
-# plt.legend()
-# plt.grid()
-# plt.show()
-# st.pyplot(plt)
-
-# - - - - - - - - - - - - - - - - - -
-# Create a figure for plotting
-st.header(f"EWMA of Closing Price Time Series of {idx_of_interest.upper()} -- varying half-life w/ crossings")
-plt.figure(figsize=(12, 6))
-plt.plot(idx_df['Close'], label='Original Data', color='skyblue')
-plt.plot(ewma_closing_hl_short, label=f'short half-life={half_life_short}', color='orange')
-plt.plot(ewma_closing_hl_long, label=f'long half-life={half_life_long}', color='magenta')
-
-# Create a mask for filling colors based on crossovers
-cross_above = ewma_closing_hl_short > ewma_closing_hl_long
-cross_below = ewma_closing_hl_short < ewma_closing_hl_long
-
-# Fill between the close price and the EWMA based on crossing conditions
-plt.fill_between(idx_df.index, idx_df['Close'], where=cross_above, color='green', alpha=0.5, label='long 1/2-life > short 1/2-life', interpolate=True)
-plt.fill_between(idx_df.index, idx_df['Close'], where=cross_below, color='red', alpha=0.5, label='short 1/2-life > long 1/2-life', interpolate=True)
-
-plt.title('Exponentially Weighted Moving Average (EWMA) -- varying half-life w/ crossings', fontsize=16)
-plt.xlabel('Time', fontsize=12)
-plt.ylabel('Value', fontsize=12)
-plt.legend()
-plt.grid()
-fig = plt.gcf()
-st.pyplot(fig)
-plt.close(fig)
-# - - - - - - - - - - - - - - - - - -
-
-# - - - Plot Candlestick Chart on Closing Prices - - -
-
-st.header(f"Candlestick Chart Analysis on Closing Prices of {idx_of_interest.upper()}")
-fig, ax = mpf.plot(idx_df, type='candle', style='charles', 
-                    title=f"Candlestick Chart for {idx_of_interest.upper()}",
-                    ylabel='Price', volume=True, returnfig=True)
-st.pyplot(fig)
-
-st.write("**Naked Price Action** -- green candlesticks are **bullish** (increase in price), red candlesticks are **bearish** (increase in price).")
-
-# - - - Plot Bollinger Bands - - -
-# Choose k (number of standard deviations)
-k_options = [1, 1.5, 2, 2.5, 3, 4]
-k = st.selectbox("Bollinger band k (std deviations):", k_options, index=k_options.index(2))
-df_Boll_band = bollinger_bands(idx_df["Close"].dropna(), num_std=float(k))
-
-fig, ax = plt.subplots(figsize=(10, 6))
-
-# Close price (keep as-is)
-ax.plot(df_Boll_band.index, df_Boll_band["Price"], label="Close Price", color="blue", linewidth=1.5)
-
-# Shade between bands (light blue)
-ax.fill_between(
-    df_Boll_band.index,
-    df_Boll_band["Lower Band"],
-    df_Boll_band["Upper Band"],
-    color="lightblue",
-    alpha=0.25,
-)
-
-ax.plot(
-    df_Boll_band.index,
-    df_Boll_band["Upper Band"],
-    color="red",
-    linewidth=1.0,
-    label="_nolegend_",
-)
-ax.plot(
-    df_Boll_band.index,
-    df_Boll_band["Lower Band"],
-    color="green",
-    linewidth=1.0,
-    label="_nolegend_",
-)
-
-# Rolling mean: thin dashed line, keep it in legend
-ax.plot(
-    df_Boll_band.index,
-    df_Boll_band["Rolling Mean"],
-    color="orange",
-    linestyle="--",
-    linewidth=1.0,
-    label="Rolling Mean",
-)
-
-ax.set_title(f"{idx_of_interest.upper()} Bollinger Bands", fontsize=16)
-ax.set_xlabel("Date")
-ax.set_ylabel("Price (USD)")
-ax.legend(loc="best")
-
-st.pyplot(fig)
-plt.close(fig)
+    main(stocks_dfs_dict)

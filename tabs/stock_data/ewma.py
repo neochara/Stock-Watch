@@ -2,7 +2,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from utils import plot_streamlit
+from utils.plots import plot_streamlit
 
 def render_ewma_tab(idx_df: pd.DataFrame, idx_of_interest: str):
     half_life_short = st.number_input(
