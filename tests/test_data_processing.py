@@ -1,4 +1,4 @@
-from data_processing import check_null, _count_null
+from scripts.data_processing import check_null, _count_null
 import pandas as pd
 import numpy as np
 
