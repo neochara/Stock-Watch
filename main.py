@@ -1,44 +1,39 @@
-import streamlit as st
+import pandas as pd
 import seaborn as sns
+import streamlit as st
 
 from constants import END_DATE, START_DATE, STOCK_IND_LIST
 from data_analysis import get_clean_data
-from tabs.stock_data.overview import render_overview_tab
-from tabs.stock_data.terminology import render_terminology_tab
-from tabs.stock_data.data_ts import render_data_ts_tab
-from tabs.stock_data.stats import render_stats_tab
-from tabs.stock_data.ewma import render_ewma_tab
-from tabs.stock_data.candlesticks import render_candlesticks_tab
-from tabs.stock_data.bollinger import render_bollinger_tab
-from tabs.stock_data.comparison import render_comparison_tab
 from tabs.portfolio_management.portfolio_main import render_portfolio_tab
 from tabs.quant_basics.quant_main import render_quant_basics_tab
+from tabs.stock_data.bollinger import render_bollinger_tab
+from tabs.stock_data.candlesticks import render_candlesticks_tab
+from tabs.stock_data.comparison import render_comparison_tab
+from tabs.stock_data.data_ts import render_data_ts_tab
+from tabs.stock_data.ewma import render_ewma_tab
+from tabs.stock_data.overview import render_overview_tab
+from tabs.stock_data.stats import render_stats_tab
+from tabs.stock_data.terminology import render_terminology_tab
 
-def main():
+
+def main(stocks_dfs_dict: dict[str, pd.DataFrame]):
     sns.set_style("whitegrid")
 
     st.title("Stock Watch :sunglasses:")
     st.write(f"The time period we are looking at is {START_DATE} to {END_DATE}")
 
     # Top-level Tabs
-    Top_StockData_Tab, Top_QuantBasics_Tab, Top_Portfolio_Tab = st.tabs(
+    top_stockdata_tab, Top_QuantBasics_Tab, Top_Portfolio_Tab = st.tabs(
         ["Stock Data", "Quant Finance 'Basics'", "Portfolio Management"]
     )
-    with Top_StockData_Tab:
-        # Sidebar or Top-level selection (Moved inside this tab)
+    with top_stockdata_tab:
         idx_of_interest = st.selectbox("Select a stock index:", STOCK_IND_LIST)
         st.write(f"Let us summarize the {idx_of_interest} stock")
         idx_of_interest = idx_of_interest.lower()
 
-        # Load Data (Moved inside this tab so it runs only when needed or just logically placed)
-        # Ideally, we cache this, but for now we follow existing pattern
-        stocks_dfs_dict = get_clean_data()
-
-        if idx_of_interest in stocks_dfs_dict:
-            idx_df = stocks_dfs_dict[idx_of_interest]
-        else:
+        idx_df = stocks_dfs_dict.get(idx_of_interest, None)
+        if idx_df is None:
             st.error(f"Data for {idx_of_interest} not found.")
-            idx_df = None
 
         # Subtabs for Stock Data
         (
@@ -101,4 +96,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Get data
+    stocks_dfs_dict = get_clean_data()
+
+    main(stocks_dfs_dict)

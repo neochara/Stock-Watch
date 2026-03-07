@@ -4,7 +4,7 @@ from openai import OpenAI
 from constants import BASE_PATH, STOCK_DATA_DICT
 
 
-def get_clean_data():
+def get_clean_data() -> dict[str, pd.DataFrame]:
     """Retrieves a dictionary of dataframes, of the data we are interested in"""
     stocks_dfs_dict = {}
 
