@@ -15,11 +15,13 @@ STOCK_DATA_DICT = {
     'Boeing Co': 'BA',
     'BlackRock Inc': 'BLK',
     'Costco': 'COST',
+    #'Disney': 'DIS',
     'Eli Lilly And Co': 'LLY',
     'Exxon Mobil': 'XOM',
     'GameStop': 'GME',
     'Gold': 'GLD',
     'Google': 'GOOG',
+    #'Meta Platforms Inc': 'META',
     'Microsoft': 'MSFT',
     'Netflix Inc': 'NFLX',
     'Nvidia': 'NVDA',
@@ -27,12 +29,13 @@ STOCK_DATA_DICT = {
     'Pfizer Inc': 'PFE',
     'Tesla': 'TSLA',
     'Visa': 'V',
-    'Volcon Inc': 'VLCN'
+    #'Voleon Capital': 'VLON'
 }
 
 STOCK_IND_LIST = list(STOCK_DATA_DICT.values())
 
 START_DATE = "2018-01-01"
+# START_DATE = "2025-01-01"
 TODAY = datetime.today()
 END_DATE = datetime.today().date()
 
